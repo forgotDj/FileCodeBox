@@ -4,7 +4,7 @@ import time
 from core.response import APIResponse
 from core.storage import FileStorageInterface, storages
 from core.settings import settings
-from apps.base.models import FileCodes, KeyValue
+from apps.base.models import FileCodes, KeyValue, file_codes_pydantic
 from apps.base.utils import get_expire_info, get_file_path_name
 from fastapi import HTTPException
 from core.settings import data_root
@@ -26,7 +26,10 @@ class FileService:
             await FileCodes.filter(prefix__icontains=keyword).limit(size).offset(offset)
         )
         total = await FileCodes.filter(prefix__icontains=keyword).count()
-        return files, total
+        files_pydantic = [
+            await file_codes_pydantic.from_tortoise_orm(f) for f in files
+        ]
+        return files_pydantic, total
 
     async def download_file(self, file_id: int):
         file_code = await FileCodes.filter(id=file_id).first()
@@ -112,7 +115,12 @@ class LocalFileService:
         if not os.path.exists(data_root / "local"):
             os.makedirs(data_root / "local")
         for file in os.listdir(data_root / "local"):
-            files.append(LocalFileClass(file))
+            local_file = LocalFileClass(file)
+            files.append({
+                "file": local_file.file,
+                "ctime": local_file.ctime,
+                "size": local_file.size,
+            })
         return files
 
     async def delete_file(self, filename: str):
