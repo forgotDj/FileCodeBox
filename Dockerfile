@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 环境变量配置
 ENV HOST="::" \
     PORT=12345 \
-    WORKERS=4 \
+    WORKERS=2 \
     LOG_LEVEL="info"
 
 EXPOSE 12345
